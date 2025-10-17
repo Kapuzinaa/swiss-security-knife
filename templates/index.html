@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Security Checker | Swiss Security Knife</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --danger-color: #e74c3c;
+            --bg-color: #ecf0f1;
+            --text-color: #2c3e50;
+            --card-bg: #ffffff;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--text-color);
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: var(--shadow-lg);
+            overflow: hidden;
+        }
+
+        header {
+            background: var(--primary-color);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            opacity: 0.9;
+            font-size: 1em;
+        }
+
+        .password-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .input-wrapper {
+            position: relative;
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+
+        input[type="password"],
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-family: monospace;
+        }
+
+        input[type="password"]:focus,
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .check-btn {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .check-btn:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-btn {
+            background: #95a5a6;
+            color: white;
+            flex: 0 0 auto;
+            min-width: 120px;
+        }
+
+        .toggle-btn:hover {
+            background: #7f8c8d;
+        }
+
+        {{if .Result}}
+        .result-section {
+            padding: 30px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .strength-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .strength-badge {
+            display: inline-block;
+            padding: 10px 30px;
+            border-radius: 25px;
+            font-size: 1.2em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .strength-strong {
+            background: linear-gradient(90deg, #27ae60, #229954);
+            color: white;
+        }
+
+        .strength-good {
+            background: linear-gradient(90deg, #f1c40f, #f39c12);
+            color: white;
+        }
+
+        .strength-fair {
+            background: linear-gradient(90deg, #f39c12, #e67e22);
+            color: white;
+        }
+
+        .strength-weak {
+            background: linear-gradient(90deg, #e74c3c, #c0392b);
+            color: white;
+        }
+
+        .score-display {
+            text-align: center;
+            font-size: 1.1em;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .requirements {
+            margin-top: 20px;
+        }
+
+        .requirements h2 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .requirements ul {
+            list-style: none;
+        }
+
+        .requirements li {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            border-left: 4px solid transparent;
+        }
+
+        .requirements li.met {
+            background: #d4edda;
+            border-left-color: var(--success-color);
+        }
+
+        .requirements li.failed {
+            background: #f8d7da;
+            border-left-color: var(--danger-color);
+        }
+
+        .icon {
+            margin-right: 12px;
+            font-size: 18px;
+            min-width: 24px;
+        }
+
+        .message {
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        {{end}}
+
+        .info-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .info-section h2 {
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .tips {
+            list-style: none;
+        }
+
+        .tips li {
+            padding: 10px 0;
+            padding-left: 25px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .tips li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--secondary-color);
+            font-weight: bold;
+        }
+
+        footer {
+            padding: 20px;
+            text-align: center;
+            background: var(--primary-color);
+            color: white;
+            font-size: 0.9em;
+        }
+
+        footer strong {
+            color: #3498db;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                margin: 0;
+                border-radius: 0;
+            }
+
+            header h1 {
+                font-size: 1.5em;
+            }
+
+            .password-section,
+            .result-section,
+            .info-section {
+                padding: 20px;
+            }
+
+            .button-group {
+                flex-direction: column;
+            }
+
+            .toggle-btn {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔐 Password Security Checker</h1>
+            <p class="subtitle">Test your password against security best practices</p>
+        </header>
+
+        <div class="password-section">
+            <form method="POST" action="/">
+                <div class="input-wrapper">
+                    <label for="password">Enter Password to Check:</label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        value="{{.Password}}"
+                        required
+                    >
+                </div>
+
+                <div class="button-group">
+                    <button type="submit" class="check-btn">Check Password</button>
+                    <button type="button" class="toggle-btn" onclick="togglePassword()">Show Password</button>
+                </div>
+            </form>
+        </div>
+
+        {{if .Result}}
+        <div class="result-section">
+            <div class="strength-display">
+                <div class="strength-badge strength-{{.Result.Strength}}">
+                    {{.Result.Strength}}
+                </div>
+                <div class="score-display">
+                    Score: {{.Result.Score}}/8 requirements met
+                </div>
+            </div>
+
+            <div class="requirements">
+                <h2>Security Requirements</h2>
+                <ul>
+                    <li class="{{if .Result.Results.Length}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Length}}✓{{else}}❌{{end}}</span>
+                        <span class="text">At least 12 characters long</span>
+                    </li>
+                    <li class="{{if .Result.Results.Uppercase}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Uppercase}}✓{{else}}❌{{end}}</span>
+                        <span class="text">Contains uppercase letter (A-Z)</span>
+                    </li>
+                    <li class="{{if .Result.Results.Lowercase}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Lowercase}}✓{{else}}❌{{end}}</span>
+                        <span class="text">Contains lowercase letter (a-z)</span>
+                    </li>
+                    <li class="{{if .Result.Results.Number}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Number}}✓{{else}}❌{{end}}</span>
+                        <span class="text">Contains number (0-9)</span>
+                    </li>
+                    <li class="{{if .Result.Results.Special}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Special}}✓{{else}}❌{{end}}</span>
+                        <span class="text">Contains special character (!@#$%^&*)</span>
+                    </li>
+                    <li class="{{if .Result.Results.Common}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Common}}✓{{else}}❌{{end}}</span>
+                        <span class="text">Not a common password</span>
+                    </li>
+                    <li class="{{if .Result.Results.Repeated}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Repeated}}✓{{else}}❌{{end}}</span>
+                        <span class="text">No repeated characters (3+ times)</span>
+                    </li>
+                    <li class="{{if .Result.Results.Sequential}}met{{else}}failed{{end}}">
+                        <span class="icon">{{if .Result.Results.Sequential}}✓{{else}}❌{{end}}</span>
+                        <span class="text">No sequential characters (abc, 123)</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="message {{if .Result.Valid}}success{{else}}warning{{end}}">
+                {{.Result.Message}}
+            </div>
+        </div>
+        {{end}}
+
+        <div class="info-section">
+            <h2>💡 Password Best Practices</h2>
+            <ul class="tips">
+                <li>Use a unique password for each account</li>
+                <li>Consider using a passphrase (e.g., "Coffee-Morning-Sunrise-42!")</li>
+                <li>Enable two-factor authentication when available</li>
+                <li>Use a password manager to store passwords securely</li>
+                <li>Change passwords if you suspect a breach</li>
+            </ul>
+        </div>
+
+        <footer>
+            <p>Part of <strong>Swiss Security Knife</strong> - Common security tools collection</p>
+        </footer>
+    </div>
+
+    <script>
+        function togglePassword() {
+            const passwordField = document.getElementById('password');
+            const button = event.target;
+
+            if (passwordField.type === 'password') {
+                passwordField.type = 'text';
+                button.textContent = 'Hide Password';
+            } else {
+                passwordField.type = 'password';
+                button.textContent = 'Show Password';
+            }
+        }
+    </script>
+</body>
+</html>
