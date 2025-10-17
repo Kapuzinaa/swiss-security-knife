@@ -1,29 +1,34 @@
 # Swiss Security Knife
 Collection of common security tools
 
-## Password Security Checker
-Go-based web application for checking password strength against security best practices.
+## Tools
 
-### Quick Start
+### 🔒 Password Security Checker
+Check password strength against security best practices with real-time validation.
+
+### 🔍 Hash Identifier
+Identify hash algorithms by analyzing hash length and character patterns.
+
+## Quick Start
 ```bash
 go run main.go
 ```
 
-### Security Requirements
-- ✓ Minimum 12 characters
-- ✓ Uppercase letter (A-Z)
-- ✓ Lowercase letter (a-z)
-- ✓ Number (0-9)
-- ✓ Special character (!@#$%^&*)
-- ✓ Not a common password
-- ✓ No repeated characters (3+ consecutive)
-- ✓ No sequential patterns (abc, 123, qwerty)
+Open `http://localhost:8080` in your browser.
 
-### Results
-The checker displays:
-- **Strength badge**: Weak, Fair, Good, or Strong
-- **Score**: X/8 requirements met
-- **Detailed checklist**: ✓ or ❌ for each requirement
+## Features
 
-### Requirements
+**Password Checker:**
+- Minimum 12 characters
+- Uppercase, lowercase, numbers, special chars
+- Common password detection
+- No repeated/sequential patterns
+
+**Hash Identifier:**
+- Identifies MD5, SHA-1, SHA-256, SHA-512, bcrypt, Argon2, and more
+- Detects hash format (Hex, Base64, Modular Crypt)
+- Security recommendations for each hash type
+- Examples of common hash formats
+
+## Requirements
 - Go 1.21 or higher

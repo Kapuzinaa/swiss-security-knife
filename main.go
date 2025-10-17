@@ -30,13 +30,32 @@ type PasswordResponse struct {
 	Message  string
 }
 
-// PageData represents data passed to the template
-type PageData struct {
+// HashMatch represents a possible hash type match
+type HashMatch struct {
+	Name     string
+	Length   int
+	Security string
+}
+
+// HashResult represents the hash identification result
+type HashResult struct {
+	Length  int
+	CharSet string
+	Matches []HashMatch
+}
+
+// PasswordPageData for password checker page
+type PasswordPageData struct {
 	Password string
 	Result   *PasswordResponse
 }
 
-// Common passwords list
+// HashPageData for hash identifier page
+type HashPageData struct {
+	Hash   string
+	Result *HashResult
+}
+
 var commonPasswords = []string{
 	"password", "123456", "123456789", "12345678", "12345", "1234567",
 	"password1", "123123", "1234567890", "000000", "qwerty", "abc123",
@@ -48,7 +67,6 @@ var commonPasswords = []string{
 	"password12", "1q2w3e4r", "batman", "trustno1", "ranger", "thomas",
 }
 
-// Sequential patterns
 var sequentialPatterns = []string{
 	"abc", "bcd", "cde", "def", "efg", "fgh", "ghi", "hij", "ijk",
 	"jkl", "klm", "lmn", "mno", "nop", "opq", "pqr", "qrs", "rst",
@@ -59,15 +77,12 @@ var sequentialPatterns = []string{
 	"zxc", "xcv", "cvb", "vbn", "bnm",
 }
 
-// PasswordValidator handles all password validation logic
 type PasswordValidator struct{}
 
-// CheckLength validates minimum password length (12 characters)
 func (pv *PasswordValidator) CheckLength(password string) bool {
 	return len(password) >= 12
 }
 
-// CheckUppercase validates presence of uppercase letters
 func (pv *PasswordValidator) CheckUppercase(password string) bool {
 	for _, char := range password {
 		if unicode.IsUpper(char) {
@@ -77,7 +92,6 @@ func (pv *PasswordValidator) CheckUppercase(password string) bool {
 	return false
 }
 
-// CheckLowercase validates presence of lowercase letters
 func (pv *PasswordValidator) CheckLowercase(password string) bool {
 	for _, char := range password {
 		if unicode.IsLower(char) {
@@ -87,7 +101,6 @@ func (pv *PasswordValidator) CheckLowercase(password string) bool {
 	return false
 }
 
-// CheckNumber validates presence of numbers
 func (pv *PasswordValidator) CheckNumber(password string) bool {
 	for _, char := range password {
 		if unicode.IsDigit(char) {
@@ -97,13 +110,11 @@ func (pv *PasswordValidator) CheckNumber(password string) bool {
 	return false
 }
 
-// CheckSpecial validates presence of special characters
 func (pv *PasswordValidator) CheckSpecial(password string) bool {
 	specialChars := regexp.MustCompile(`[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]`)
 	return specialChars.MatchString(password)
 }
 
-// CheckCommon validates password is not a common password
 func (pv *PasswordValidator) CheckCommon(password string) bool {
 	lowerPassword := strings.ToLower(password)
 	for _, common := range commonPasswords {
@@ -114,13 +125,11 @@ func (pv *PasswordValidator) CheckCommon(password string) bool {
 	return true
 }
 
-// CheckRepeated validates no repeated characters (3 or more consecutive)
 func (pv *PasswordValidator) CheckRepeated(password string) bool {
 	runes := []rune(password)
 	if len(runes) < 3 {
 		return true
 	}
-
 	for i := 0; i < len(runes)-2; i++ {
 		if runes[i] == runes[i+1] && runes[i] == runes[i+2] {
 			return false
@@ -129,15 +138,12 @@ func (pv *PasswordValidator) CheckRepeated(password string) bool {
 	return true
 }
 
-// CheckSequential validates no sequential character patterns
 func (pv *PasswordValidator) CheckSequential(password string) bool {
 	lowerPassword := strings.ToLower(password)
-
 	for _, pattern := range sequentialPatterns {
 		if strings.Contains(lowerPassword, pattern) {
 			return false
 		}
-		// Check reverse pattern
 		reversed := reverseString(pattern)
 		if strings.Contains(lowerPassword, reversed) {
 			return false
@@ -146,7 +152,6 @@ func (pv *PasswordValidator) CheckSequential(password string) bool {
 	return true
 }
 
-// Validate performs all validation checks
 func (pv *PasswordValidator) Validate(password string) PasswordResponse {
 	results := ValidationResult{
 		Length:     pv.CheckLength(password),
@@ -159,7 +164,6 @@ func (pv *PasswordValidator) Validate(password string) PasswordResponse {
 		Sequential: pv.CheckSequential(password),
 	}
 
-	// Calculate score
 	score := 0
 	if results.Length {
 		score++
@@ -186,10 +190,8 @@ func (pv *PasswordValidator) Validate(password string) PasswordResponse {
 		score++
 	}
 
-	// Determine strength
 	strength := "weak"
 	message := "Password does not meet security requirements"
-
 	percentage := (score * 100) / 8
 
 	if percentage >= 90 {
@@ -203,10 +205,8 @@ func (pv *PasswordValidator) Validate(password string) PasswordResponse {
 		message = "Password needs improvement"
 	}
 
-	valid := score == 8
-
 	return PasswordResponse{
-		Valid:    valid,
+		Valid:    score == 8,
 		Strength: strength,
 		Score:    score,
 		Results:  results,
@@ -214,7 +214,82 @@ func (pv *PasswordValidator) Validate(password string) PasswordResponse {
 	}
 }
 
-// reverseString reverses a string
+type HashIdentifier struct{}
+
+func (hi *HashIdentifier) Identify(hash string) HashResult {
+	hash = strings.TrimSpace(hash)
+	length := len(hash)
+
+	var charSet string
+	if regexp.MustCompile(`^[0-9a-fA-F]+$`).MatchString(hash) {
+		charSet = "Hexadecimal"
+	} else if regexp.MustCompile(`^[A-Za-z0-9+/=]+$`).MatchString(hash) {
+		charSet = "Base64"
+	} else if strings.HasPrefix(hash, "$") {
+		charSet = "Modular Crypt Format"
+	} else {
+		charSet = "Mixed/Unknown"
+	}
+
+	matches := []HashMatch{}
+
+	if charSet == "Hexadecimal" {
+		switch length {
+		case 32:
+			matches = append(matches, HashMatch{"MD5", 32, "Weak - Not recommended"})
+			matches = append(matches, HashMatch{"NTLM", 32, "Weak - Not recommended"})
+		case 40:
+			matches = append(matches, HashMatch{"SHA-1", 40, "Weak - Deprecated"})
+			matches = append(matches, HashMatch{"RIPEMD-160", 40, "Moderate"})
+		case 56:
+			matches = append(matches, HashMatch{"SHA-224", 56, "Moderate"})
+		case 64:
+			matches = append(matches, HashMatch{"SHA-256", 64, "Strong"})
+			matches = append(matches, HashMatch{"BLAKE2s-256", 64, "Strong"})
+		case 96:
+			matches = append(matches, HashMatch{"SHA-384", 96, "Strong"})
+		case 128:
+			matches = append(matches, HashMatch{"SHA-512", 128, "Strong"})
+			matches = append(matches, HashMatch{"BLAKE2b-512", 128, "Strong"})
+		}
+	}
+
+	if strings.HasPrefix(hash, "$") {
+		if strings.HasPrefix(hash, "$2a$") || strings.HasPrefix(hash, "$2b$") || strings.HasPrefix(hash, "$2y$") {
+			matches = append(matches, HashMatch{"bcrypt", length, "Strong - Recommended"})
+		} else if strings.HasPrefix(hash, "$6$") {
+			matches = append(matches, HashMatch{"SHA-512 Crypt", length, "Strong"})
+		} else if strings.HasPrefix(hash, "$5$") {
+			matches = append(matches, HashMatch{"SHA-256 Crypt", length, "Strong"})
+		} else if strings.HasPrefix(hash, "$1$") {
+			matches = append(matches, HashMatch{"MD5 Crypt", length, "Weak"})
+		} else if strings.HasPrefix(hash, "$argon2") {
+			matches = append(matches, HashMatch{"Argon2", length, "Very Strong - Recommended"})
+		} else if strings.HasPrefix(hash, "$scrypt$") {
+			matches = append(matches, HashMatch{"scrypt", length, "Strong"})
+		}
+	}
+
+	if charSet == "Base64" {
+		switch length {
+		case 24:
+			matches = append(matches, HashMatch{"MD5 (Base64)", 24, "Weak"})
+		case 28:
+			matches = append(matches, HashMatch{"SHA-1 (Base64)", 28, "Weak"})
+		case 44:
+			matches = append(matches, HashMatch{"SHA-256 (Base64)", 44, "Strong"})
+		case 88:
+			matches = append(matches, HashMatch{"SHA-512 (Base64)", 88, "Strong"})
+		}
+	}
+
+	return HashResult{
+		Length:  length,
+		CharSet: charSet,
+		Matches: matches,
+	}
+}
+
 func reverseString(s string) string {
 	runes := []rune(s)
 	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
@@ -223,20 +298,16 @@ func reverseString(s string) string {
 	return string(runes)
 }
 
-// Handler for the main page
-func indexHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse the template
-	tmpl, err := template.ParseFiles("templates/index.html")
+func passwordHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("templates/password.html")
 	if err != nil {
 		log.Printf("Error parsing template: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	// Initialize page data
-	data := PageData{}
+	data := PasswordPageData{}
 
-	// Handle form submission
 	if r.Method == http.MethodPost {
 		password := r.FormValue("password")
 		data.Password = password
@@ -248,22 +319,46 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Render the template
-	err = tmpl.Execute(w, data)
+	tmpl.Execute(w, data)
+}
+
+func hashHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("templates/hash.html")
 	if err != nil {
-		log.Printf("Error executing template: %v", err)
+		log.Printf("Error parsing template: %v", err)
 		http.Error(w, "Internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	data := HashPageData{}
+
+	if r.Method == http.MethodPost {
+		hash := r.FormValue("hash")
+		data.Hash = hash
+
+		if hash != "" {
+			identifier := &HashIdentifier{}
+			result := identifier.Identify(hash)
+			data.Result = &result
+		}
+	}
+
+	tmpl.Execute(w, data)
 }
 
 func main() {
-	// Route handlers
-	http.HandleFunc("/", indexHandler)
+	// Serve static files
+	fs := http.FileServer(http.Dir("static"))
+	http.Handle("/static/", http.StripPrefix("/static/", fs))
+
+	// Page handlers
+	http.HandleFunc("/", passwordHandler)
+	http.HandleFunc("/hash-identifier", hashHandler)
 
 	port := ":8080"
 	log.Printf("Server starting on port %s", port)
-	log.Printf("Access the password checker at http://localhost%s", port)
+	log.Printf("Password Checker: http://localhost%s", port)
+	log.Printf("Hash Identifier:  http://localhost%s/hash-identifier", port)
 
 	if err := http.ListenAndServe(port, nil); err != nil {
 		log.Fatal(err)

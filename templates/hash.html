@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hash Identifier | Swiss Security Knife</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <nav>
+        <div class="nav-container">
+            <button class="hamburger" onclick="toggleMenu()">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+            <div class="nav-left">
+                <span class="logo">
+                    <span>🔐</span>
+                    <span>Swiss Security Knife</span>
+                </span>
+                <button class="theme-toggle" onclick="toggleTheme()" title="Toggle dark mode">
+                    <span id="themeIcon">🌙</span>
+                </button>
+            </div>
+            <ul class="nav-links" id="navLinks">
+                <li><a href="/">Password Checker</a></li>
+                <li><a href="/hash-identifier" class="active">Hash Identifier</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main>
+        <div class="card">
+            <div class="card-header">
+                <h1>🔍 Hash Identifier</h1>
+                <p>Identify the hash algorithm used for a given hash value</p>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="/hash-identifier">
+                    <div class="form-group">
+                        <label for="hash">Enter Hash:</label>
+                        <textarea
+                            id="hash"
+                            name="hash"
+                            placeholder="Enter hash value (e.g., 5f4dcc3b5aa765d61d8327deb882cf99)"
+                            required
+                        >{{.Hash}}</textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Identify Hash</button>
+                </form>
+
+                {{if .Result}}
+                <div class="hash-result">
+                    {{if .Result.Matches}}
+                    <h2>Possible Hash Types:</h2>
+                    <ul class="matches-list">
+                        {{range .Result.Matches}}
+                        <li>
+                            <div class="match-name">{{.Name}}</div>
+                            <div class="match-details">
+                                Length: {{.Length}} characters | Security: {{.Security}}
+                            </div>
+                        </li>
+                        {{end}}
+                    </ul>
+
+                    <div class="hash-info">
+                        <div class="hash-info-row">
+                            <span class="hash-info-label">Hash Length:</span>
+                            <span class="hash-info-value">{{.Result.Length}} characters</span>
+                        </div>
+                        <div class="hash-info-row">
+                            <span class="hash-info-label">Character Set:</span>
+                            <span class="hash-info-value">{{.Result.CharSet}}</span>
+                        </div>
+                    </div>
+                    {{else}}
+                    <div class="no-match">
+                        ⚠️ No matching hash algorithm found. Please check your input.
+                    </div>
+                    {{end}}
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h2>📚 Common Hash Types</h2>
+            <div class="examples-grid">
+                <div class="example-item">
+                    <div class="example-name">MD5 (128-bit)</div>
+                    <div class="example-hash">5d41402abc4b2a76b9719d911017c592</div>
+                </div>
+                <div class="example-item">
+                    <div class="example-name">SHA-1 (160-bit)</div>
+                    <div class="example-hash">356a192b7913b04c54574d18c28d46e6395428ab</div>
+                </div>
+                <div class="example-item">
+                    <div class="example-name">SHA-256 (256-bit)</div>
+                    <div class="example-hash">2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae</div>
+                </div>
+                <div class="example-item">
+                    <div class="example-name">SHA-512 (512-bit)</div>
+                    <div class="example-hash">3c9909afec25354d551dae21590bb26e38d53f2173b8d3dc3eee4c047e7ab1c1eb8b85103e3be7ba613b31bb5c9c36214dc9f14a42fd7a2fdb84856bca5c44c2</div>
+                </div>
+                <div class="example-item">
+                    <div class="example-name">bcrypt</div>
+                    <div class="example-hash">$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p><strong>Swiss Security Knife</strong> - Collection of common security tools</p>
+        <p>Built with Go | Open Source</p>
+    </footer>
+
+    <script src="/static/theme.js"></script>
+    <script>
+        function toggleMenu() {
+            document.querySelector('.hamburger').classList.toggle('active');
+            document.getElementById('navLinks').classList.toggle('active');
+            document.body.classList.toggle('menu-open');
+        }
+
+        document.addEventListener('click', function(e) {
+            const nav = document.querySelector('nav');
+            const links = document.getElementById('navLinks');
+            const hamburger = document.querySelector('.hamburger');
+
+            if (!nav.contains(e.target) && links.classList.contains('active')) {
+                hamburger.classList.remove('active');
+                links.classList.remove('active');
+                document.body.classList.remove('menu-open');
+            }
+        });
+    </script>
+</body>
+</html>
